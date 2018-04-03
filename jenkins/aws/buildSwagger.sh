@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Augment a swagger file with AWS API gateway integration semantics
+# Validate, clean and convert Swagger file to a standard format
  
 [[ -n "${AUTOMATION_DEBUG}" ]] && set ${AUTOMATION_DEBUG}
 trap '[[ (-z "${AUTOMATION_DEBUG}") && (-d "${tmpdir}") ]] && rm -rf "${tmpdir}";exit ${RESULT:-1}' EXIT SIGHUP SIGINT SIGTERM
@@ -9,7 +9,7 @@ trap '[[ (-z "${AUTOMATION_DEBUG}") && (-d "${tmpdir}") ]] && rm -rf "${tmpdir}"
 # Define the desired result file
 DIST_DIR="${AUTOMATION_BUILD_DIR}/dist"
 mkdir -p ${DIST_DIR}
-SWAGGER_RESULT_FILE="${DIST_DIR}/swagger.zip"
+SWAGGER_RESULT_FILE="${DIST_DIR}/swagger.json"
 
 # Create a dir for some temporary files
 tmpdir="$(getTempDir "cota_sw_XXX")"
@@ -90,38 +90,7 @@ CLEAN_SWAGGER_SPEC_FILE="${tmpdir}/swagger-cleaned-up.json"
 # Clenup definitions in swagger file
 runJQ -f "${AUTOMATION_DIR}/cleanUpSwagger.jq" < "${TEMP_SWAGGER_SPEC_FILE}" > "${CLEAN_SWAGGER_SPEC_FILE}"
 
-# Augment the swagger file if required
-APIGW_CONFIG=$(findFile \
-                "${AUTOMATION_BUILD_DIR}/apigw.json" \
-                "${AUTOMATION_BUILD_DEVOPS_DIR}/apigw.json" \
-                "${AUTOMATION_BUILD_DEVOPS_DIR}/codeontap/apigw.json")
-
-if [[ -f "${APIGW_CONFIG}" ]]; then
-
-    # Generate the swagger file
-    ${GENERATION_DIR}/createExtendedSwaggerSpecification.sh \
-        -s "${CLEAN_SWAGGER_SPEC_FILE}" \
-        -o "${SWAGGER_RESULT_FILE}" \
-        -i "${APIGW_CONFIG}"
-
-    # Check generation was successful
-    [[ ! -f "${SWAGGER_RESULT_FILE}" ]] &&
-        fatal "Can't find generated swagger files. Were they generated successfully?"
-else
-    zip "${SWAGGER_RESULT_FILE}" "${CLEAN_SWAGGER_SPEC_FILE}"
-fi
-
-# Generate documentation
-mkdir "${tmpdir}/swaggerUI"
-[[ -f "${TEMP_SWAGGER_SPEC_FILE}" ]] && 
-    cp "${TEMP_SWAGGER_SPEC_FILE}" "${tmpdir}/swaggerUI/"
-
-docker run --rm \
-    -v "${tmpdir}/swaggerUI:/app/indir" -v "${DIST_DIR}:/app/outdir" \
-    -e SWAGGER_JSON=/app/indir/$(fileName "${TEMP_SWAGGER_SPEC_FILE}") \
-    codeontap/swaggerui-export
-RESULT=$?
-[[ "${RESULT}" -ne 0 ]] && fatal "Swagger file documentation generation failed"
+mv "${CLEAN_SWAGGER_SPEC_FILE}" "${SWAGGER_RESULT_FILE}"
 
 # All good
 RESULT=0
