@@ -9,7 +9,7 @@ function main() {
     TAG="acc${AUTOMATION_JOB_IDENTIFIER}-${ACCOUNTS_LIST}" ||
     TAG="acc${AUTOMATION_JOB_IDENTIFIER}-${ACCOUNT}"
 
-  ${AUTOMATION_DIR}/manageUnits.sh -r "${TAG}" || return $?
+  ${AUTOMATION_DIR}/manageUnits.sh -r "${TAG//,_}" || return $?
 
   # All ok so tag the config repo
   save_repo "${ACCOUNT_DIR}" "account config" \
