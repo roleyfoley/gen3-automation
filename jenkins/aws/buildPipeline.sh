@@ -9,15 +9,15 @@ tmpdir="$(getTempDir "cota_inf_XXX")"
 function main() {
     # Make sure we are in the build source directory
     cd ${AUTOMATION_BUILD_SRC_DIR}
-    
+
     # Make sure we have a script to start from
     [[ ! -f pipeline-definition.json && ! -f pipeline-parameters.json ]] &&
         { fatal "No pipeline-definition.json found"; return 1; }
-
-    cp -Lr "${AUTOMATION_BUILD_SRC_DIR}/" "${tmpdir}/"
+        
+    cp -Lr "${AUTOMATION_BUILD_SRC_DIR}"* "${tmpdir}/"
 
     cd "${tmpdir}"
-    zip -r "${tmpdir}/pipeline.zip" *  
+    zip -r "${tmpdir}/pipeline.zip" *
 
     if [[ -f ${tmpdir}/pipeline.zip ]]; then
         mkdir "${AUTOMATION_BUILD_SRC_DIR}/dist"
